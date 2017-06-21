@@ -52,6 +52,11 @@ options:
            For example: (192.168.0.0/24)."
       required: True
       default: null
+   hostname:
+      description:
+         - "Register hostname with IP"
+      required: False
+      default: null
    ip_addr:
       description:
          - Deletes address.
@@ -69,6 +74,7 @@ phpipam_ip:
   username: "admin"
   password: "secret"
   subnet: "192.168.0.0/24"
+  hostname: "test.example.com"
   state: present
 register: result
 
@@ -150,10 +156,11 @@ def get_gw_and_dns(base_url, app_id, subnet_id, headers, ssl_verify):
       return False, "Netmask is not defined for this subnet"
    return True, ip_info
 
-def get_first_free_ip(base_url, app_id, subnet_id, headers, ssl_verify):
+def get_first_free_ip(base_url, app_id, subnet_id, hostname, headers, ssl_verify):
    url = "{}{}{}{}{}{}" . format(base_url, '/', app_id, '/addresses/first_free/', subnet_id, '/')
+   payload = {'hostname': hostname}
    try:
-      r = requests.post(url, headers=headers, verify=ssl_verify)
+      r = requests.post(url, headers=headers, data=payload, verify=ssl_verify)
       result = r.json()
       r.raise_for_status()
    except requests.exceptions.RequestException as err:
@@ -199,7 +206,7 @@ def get_free_ip(data):
       return True, False, ip_info
 
    # Get ip
-   success, ip_result = get_first_free_ip(data['base_url'],data['app_id'],subnet_id,headers,data['ssl_verify'])
+   success, ip_result = get_first_free_ip(data['base_url'],data['app_id'],subnet_id,data['hostname'],headers,data['ssl_verify'])
    if not success:
       return True, False, ip_result
    ip_info['ip_addr'] =  ip_result
@@ -235,10 +242,11 @@ def main():
          base_url=dict(required=True, type="str"),
          app_id=dict(required=True, type="str"),
          username=dict(required=True, type="str"),
-         password=dict(required=True, type="str"),
+         password=dict(required=True, type="str", default=None, no_log=True),
          ssl_verify=dict(default=False, type="bool"),
          subnet=dict(type="str"),
          ip_addr=dict(type="str"),
+         hostname=dict(type="str"),
          state=dict(
             required=True,
             choices=['present', 'absent']),
