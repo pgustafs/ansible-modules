@@ -90,6 +90,8 @@ phpipam_ip:
 from ansible.module_utils.basic import *
 import requests
 import json
+import logging, sys
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 def get_token(base_url, app_id, username, password, ssl_verify):
    # Performs a GET using the passed URL location and returns token
