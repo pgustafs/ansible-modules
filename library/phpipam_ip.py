@@ -90,6 +90,8 @@ phpipam_ip:
 from ansible.module_utils.basic import *
 import requests
 import json
+import logging, sys
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 def get_token(base_url, app_id, username, password, ssl_verify):
    # Performs a GET using the passed URL location and returns token
@@ -147,7 +149,10 @@ def get_gw_and_dns(base_url, app_id, subnet_id, headers, ssl_verify):
    except:
       return False, "Gateway is not defined for this subnet"
    try:
-      ip_info['nameserver1'] = result['data']['nameservers']['namesrv1']
+      nameserver_list = result['data']['nameservers']['namesrv1'].split(";")
+      for i in range(0, len(nameserver_list)):
+          ns = "nameserver{}".format(i+1)
+          ip_info[ns] = nameserver_list[i]
    except:
       return False, "Nameserver is not defined for this subnet"
    try:
